@@ -1,0 +1,159 @@
+name: Deploy CDK
+
+on:
+  push:
+    branches:
+      - dev
+      - stage
+      - prod
+
+  pull_request:
+    branches:
+      - dev
+      - stage
+      - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: cdk-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SESSION_NAME: github-oidc-${{ github.run_id }}-${{ github.run_attempt }}
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    outputs:
+      aws_id: ${{ steps.vars.outputs.aws_id }}
+      role_name: ${{ steps.vars.outputs.role_name }}
+      env_name: ${{ steps.vars.outputs.env_name }}
+      aws_region: ${{ steps.vars.outputs.aws_region }}
+
+    steps:
+      - id: vars
+        shell: bash
+        run: |
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BRANCH="${{ github.event.pull_request.base.ref }}"
+          else
+            BRANCH="${GITHUB_REF##*/}"
+          fi
+
+          echo "Branch: $BRANCH"
+
+          case "$BRANCH" in
+            dev)
+              echo "aws_id=${{ secrets.AWS_ID_DEV }}" >> "$GITHUB_OUTPUT"
+              echo "role_name=${{ secrets.ROLE_NAME_DEV }}" >> "$GITHUB_OUTPUT"
+              echo "aws_region=${{ vars.CDK_DEV_REGION }}" >> "$GITHUB_OUTPUT"
+              echo "env_name=dev" >> "$GITHUB_OUTPUT"
+              ;;
+            stage)
+              echo "aws_id=${{ secrets.AWS_ID_STAGE }}" >> "$GITHUB_OUTPUT"
+              echo "role_name=${{ secrets.ROLE_NAME_STAGE }}" >> "$GITHUB_OUTPUT"
+              echo "aws_region=${{ vars.CDK_STG_REGION }}" >> "$GITHUB_OUTPUT"
+              echo "env_name=stg" >> "$GITHUB_OUTPUT"
+              ;;
+            prod)
+              echo "aws_id=${{ secrets.AWS_ID_PROD }}" >> "$GITHUB_OUTPUT"
+              echo "role_name=${{ secrets.ROLE_NAME_PROD }}" >> "$GITHUB_OUTPUT"
+              echo "aws_region=${{ vars.CDK_PROD_REGION }}" >> "$GITHUB_OUTPUT"
+              echo "env_name=prod" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unsupported branch: $BRANCH"
+              exit 1
+              ;;
+          esac
+
+  check:
+    if: github.event_name == 'pull_request'
+
+    needs: setup
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: ./cdk
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cdk/package-lock.json
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.aws_id }}:role/${{ needs.setup.outputs.role_name }}
+          aws-region: ${{ needs.setup.outputs.aws_region }}
+          role-session-name: ${{ env.SESSION_NAME }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: CDK Synth
+        run: |
+          ENV_NAME=${{ needs.setup.outputs.env_name }} npm run cdk:synth
+
+      - name: CDK Diff
+        run: |
+          ENV_NAME=${{ needs.setup.outputs.env_name }} npm run cdk:diff
+
+  deploy:
+    if: github.event_name == 'push'
+
+    needs: setup
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: ./cdk
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cdk/package-lock.json
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.aws_id }}:role/${{ needs.setup.outputs.role_name }}
+          aws-region: ${{ needs.setup.outputs.aws_region }}
+          role-session-name: ${{ env.SESSION_NAME }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: CDK Synth
+        run: |
+          ENV_NAME=${{ needs.setup.outputs.env_name }} npm run cdk:synth
+
+      - name: Deploy
+        run: |
+          ENV_NAME=${{ needs.setup.outputs.env_name }} npm run cdk:deploy -- --require-approval never
