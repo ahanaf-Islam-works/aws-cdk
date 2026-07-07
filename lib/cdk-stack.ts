@@ -92,6 +92,9 @@ export class MainStack extends cdk.Stack {
       openAiApiKey: process.env.OPENAI_API_KEY,
       geminiApiKey: process.env.GEMINI_API_KEY,
       jwtSecret: process.env.JWT_SECRET,
+      vpcId: vpcStack.vpc.vpcId,
+      lambdaSecurityGroupId: sgStack.lambdaSecurityGroup.securityGroupId,
+      privateSubnetId: vpcStack.vpc.privateSubnets[0].subnetId,
     });
   }
 }

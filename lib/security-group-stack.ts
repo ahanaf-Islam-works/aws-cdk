@@ -41,6 +41,12 @@ export class SecurityGroupStack extends Construct {
       'Allow Django traffic from ALB',
     );
 
+    this.ec2SecurityGroup.addEgressRule(
+      this.lambdaSecurityGroup,
+      ec2.Port.tcp(8000),
+      'Allow Lambda to reach django app directly',
+    );
+
     /* Lambda Security group */
     this.lambdaSecurityGroup = new ec2.SecurityGroup(
       this,

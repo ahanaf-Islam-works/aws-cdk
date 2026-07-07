@@ -54,6 +54,15 @@ export class Ec2Stack extends Construct {
       }),
     );
 
+    this.role.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        actions: ['lambda:InvokeFunction'],
+        resources: [
+          `arn:aws:lambda:${region}:${cdk.Stack.of(this).account}:function:contract-checker-*`,
+        ],
+      }),
+    );
+
     const userData = createEc2UserData({
       region,
       ecrRepository: props.repository,

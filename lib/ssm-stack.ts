@@ -34,11 +34,13 @@ export interface SsmStackProps {
 
   logLevel?: string;
 
-  openAiApiKey?: string;
-
   geminiApiKey?: string;
 
   jwtSecret?: string;
+
+  vpcId: string;
+  privateSubnetId: string;
+  lambdaSecurityGroupId: string;
 }
 
 export class SsmStack extends Construct {
@@ -80,11 +82,15 @@ export class SsmStack extends Construct {
 
       ECR_REPOSITORY_URI: props.ecrRepository.repositoryUri,
 
-      OPENAI_API_KEY: props.openAiApiKey ?? '',
-
       GEMINI_API_KEY: props.geminiApiKey ?? '',
 
       JWT_SECRET: props.jwtSecret ?? '',
+
+      VPC_ID: props.vpcId,
+
+      PRIVATE_SUBNET_ID: props.privateSubnetId,
+
+      LAMBDA_SECURITY_GROUP_ID: props.lambdaSecurityGroupId,
     };
 
     Object.entries(parameters).forEach(([key, value]) => {
