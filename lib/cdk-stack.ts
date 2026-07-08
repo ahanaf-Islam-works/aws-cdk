@@ -89,12 +89,13 @@ export class MainStack extends cdk.Stack {
       // Once you add a domain: allowedHosts: `${apiDomainName},${domainName}`
       allowedHosts: cloudFrontStack.distribution.distributionDomainName,
       corsAllowedOrigins: `https://${cloudFrontStack.distribution.distributionDomainName}`,
-      openAiApiKey: process.env.OPENAI_API_KEY,
       geminiApiKey: process.env.GEMINI_API_KEY,
       jwtSecret: process.env.JWT_SECRET,
       vpcId: vpcStack.vpc.vpcId,
       lambdaSecurityGroupId: sgStack.lambdaSecurityGroup.securityGroupId,
       privateSubnetId: vpcStack.vpc.privateSubnets[0].subnetId,
+
+      apiUrl: `https://${cloudFrontStack.distribution.distributionDomainName}/api`,
     });
   }
 }

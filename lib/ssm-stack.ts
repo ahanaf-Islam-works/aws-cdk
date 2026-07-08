@@ -41,15 +41,19 @@ export interface SsmStackProps {
   vpcId: string;
   privateSubnetId: string;
   lambdaSecurityGroupId: string;
+
+  apiUrl?: string;
 }
 
 export class SsmStack extends Construct {
   constructor(scope: Construct, id: string, props: SsmStackProps) {
     super(scope, id);
 
-    const prefix = `/${appName}/${props.envName}`;
+    const bePrefix = `/${appName}/${props.envName}`;
 
-    const parameters = {
+    const fePrefix = bePrefix + '/fe/VITE';
+
+    const beParameters = {
       DATABASE_URL: props.databaseUrl,
 
       DB_HOST: props.dbHost,
@@ -93,9 +97,20 @@ export class SsmStack extends Construct {
       LAMBDA_SECURITY_GROUP_ID: props.lambdaSecurityGroupId,
     };
 
-    Object.entries(parameters).forEach(([key, value]) => {
+    const fePrameters = {
+      API_URL: props.apiUrl ?? '',
+    };
+
+    Object.entries(beParameters).forEach(([key, value]) => {
       new ssm.StringParameter(this, key, {
-        parameterName: `${prefix}/${key}`,
+        parameterName: `${bePrefix}/${key}`,
+        stringValue: value,
+      });
+    });
+
+    Object.entries(fePrameters).forEach(([key, value]) => {
+      new ssm.StringParameter(this, key, {
+        parameterName: `${fePrefix}_${key}`,
         stringValue: value,
       });
     });
