@@ -10,6 +10,9 @@ import { EcsStack } from './ecs-stack';
 import { AlbStack } from './alb-stack';
 import { CloudFrontStack } from './cloudfront-stack';
 import { SsmStack } from './ssm-stack';
+import { IamStack } from './iam-stack';
+import { Ec2Stack } from './ec2-stack';
+import { EcsClusterStack } from './ecs-cluster-stack';
 export interface MainStackProps extends cdk.StackProps {
   envName: string;
 }
@@ -20,54 +23,77 @@ export class MainStack extends cdk.Stack {
 
     const { envName } = props;
 
-    const vpcStack = new VpcStack(this, 'vpc', {
-      envName: envName,
+    const vpc = new VpcStack(this, 'Vpc', {
+      envName,
     });
 
-    const sgStack = new SecurityGroupStack(this, 'SecurityGroups', {
-      envName: envName,
-      vpc: vpcStack.vpc,
+    const sg = new SecurityGroupStack(this, 'SecurityGroups', {
+      envName,
+      vpc: vpc.vpc,
     });
 
-    const s3Stack = new S3Stack(this, 'S3', { envName });
+    const s3 = new S3Stack(this, 'S3', {
+      envName,
+    });
 
-    const ecrStack = new EcrStack(this, 'Ecr', { envName });
+    const ecrStack = new EcrStack(this, 'Ecr', {
+      envName,
+    });
 
     const rds = new RdsPostgres(this, 'Rds', {
       envName,
-      vpc: vpcStack.vpc,
-      securityGroup: sgStack.databaseSecurityGroup,
+      vpc: vpc.vpc,
+      securityGroup: sg.databaseSecurityGroup,
       dbName: `${appName}_${envName}_db`.replace(/-/g, '_'),
       dbUserName: `${appName}_${envName}_admin`.replace(/-/g, '_'),
     });
 
-    const ecsStack = new EcsStack(this, 'Ecs', {
+    const iamRoles = new IamStack(this, 'Iam', {
       envName,
-      vpc: vpcStack.vpc,
-      ec2SecurityGroup: sgStack.ec2SecurityGroup,
-      repository: ecrStack.repository,
       dbSecret: rds.dbSecret,
+      mediaBucket: s3.mediaBucket,
+      ecrRepository: ecrStack.repository,
+    });
+
+    const ecsCluster = new EcsClusterStack(this, 'EcsCluster', {
+      envName,
+      vpc: vpc.vpc,
+    });
+
+    new Ec2Stack(this, 'Ec2', {
+      envName,
+      vpc: vpc.vpc,
+      ec2SecurityGroup: sg.ecsSecurityGroup,
+      instanceRole: iamRoles.instanceRole,
+      clusterName: ecsCluster.cluster.clusterName,
+    });
+
+    const ecs = new EcsStack(this, 'Ecs', {
+      envName,
+      cluster: ecsCluster.cluster,
+      repository: ecrStack.repository,
+      executionRole: iamRoles.executionRole,
+      taskRole: iamRoles.taskRole,
       containerPort: 8000,
     });
 
-    ecsStack.service.node.addDependency(rds.database);
+    ecs.service.node.addDependency(rds.database);
 
     const albStack = new AlbStack(this, 'Alb', {
       envName,
-      vpc: vpcStack.vpc,
-      albSecurityGroup: sgStack.albSecurityGroup,
-      ecsService: ecsStack.service,
+      vpc: vpc.vpc,
+      albSecurityGroup: sg.albSecurityGroup,
+      ecsService: ecs.service,
+      containerName: ecs.containerName,
       containerPort: 8000,
       healthCheckPath: '/health/',
     });
 
     const cloudFrontStack = new CloudFrontStack(this, 'CloudFront', {
       envName,
-      frontendBucket: s3Stack.frontendBucket,
-      mediaBucket: s3Stack.mediaBucket,
+      frontendBucket: s3.frontendBucket,
+      mediaBucket: s3.mediaBucket,
       alb: albStack.alb,
-      // certificate: myAcmCertificate, // must be in us-east-1 for CloudFront
-      // domainNames: [props.domainName],
     });
 
     new SsmStack(this, 'Ssm', {
@@ -78,23 +104,18 @@ export class MainStack extends cdk.Stack {
       dbName: rds.dbName,
       dbUsername: rds.userName,
       dbSecret: rds.dbSecret,
-      mediaBucket: s3Stack.mediaBucket,
-      frontendBucket: s3Stack.frontendBucket,
+      mediaBucket: s3.mediaBucket,
+      frontendBucket: s3.frontendBucket,
       ecrRepository: ecrStack.repository,
       distribution: cloudFrontStack.distribution,
-      // NOTE: don't hardcode secrets. Pull these from env vars set by your
-      // CI pipeline (or better, from Secrets Manager) at synth time.
       djangoSecretKey: process.env.DJANGO_SECRET_KEY ?? '',
-      // No custom domain yet, so fall back to CloudFront's default domain.
-      // Once you add a domain: allowedHosts: `${apiDomainName},${domainName}`
       allowedHosts: cloudFrontStack.distribution.distributionDomainName,
       corsAllowedOrigins: `https://${cloudFrontStack.distribution.distributionDomainName}`,
       geminiApiKey: process.env.GEMINI_API_KEY,
       jwtSecret: process.env.JWT_SECRET,
-      vpcId: vpcStack.vpc.vpcId,
-      lambdaSecurityGroupId: sgStack.lambdaSecurityGroup.securityGroupId,
-      privateSubnetId: vpcStack.vpc.privateSubnets[0].subnetId,
-
+      vpcId: vpc.vpc.vpcId,
+      lambdaSecurityGroupId: sg.lambdaSecurityGroup.securityGroupId,
+      privateSubnetId: vpc.vpc.privateSubnets[0].subnetId,
       apiUrl: `https://${cloudFrontStack.distribution.distributionDomainName}/api`,
     });
   }

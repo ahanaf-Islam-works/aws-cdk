@@ -1,47 +1,54 @@
 import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { appName } from '../config/env';
 
 export interface AlbStackProps {
   envName: string;
   vpc: ec2.IVpc;
-  albSecurityGroup: ec2.SecurityGroup;
+  albSecurityGroup: ec2.ISecurityGroup;
   ecsService: ecs.Ec2Service;
-  containerPort?: number;
+  containerName: string;
+  containerPort: number;
   healthCheckPath?: string;
 }
 
 export class AlbStack extends Construct {
   public readonly alb: elbv2.ApplicationLoadBalancer;
   public readonly listener: elbv2.ApplicationListener;
-  public readonly targetGroup: elbv2.ApplicationTargetGroup;
 
   constructor(scope: Construct, id: string, props: AlbStackProps) {
     super(scope, id);
-
-    const port = props.containerPort ?? 8000;
 
     this.alb = new elbv2.ApplicationLoadBalancer(this, `${appName}-alb-${props.envName}`, {
       loadBalancerName: `${appName}-${props.envName}-alb`,
       vpc: props.vpc,
       internetFacing: true,
       securityGroup: props.albSecurityGroup,
-      vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC,
+      },
     });
 
-    this.targetGroup = new elbv2.ApplicationTargetGroup(this, `${appName}-tg-${props.envName}`, {
-      targetGroupName: `${appName}-${props.envName}-tg`,
-      vpc: props.vpc,
-      port,
+    this.listener = this.alb.addListener(`${appName}-listener-${props.envName}`, {
+      port: 80,
       protocol: elbv2.ApplicationProtocol.HTTP,
-      targetType: elbv2.TargetType.INSTANCE,
+      open: true,
+    });
+
+    this.listener.addTargets(`${appName}-targets-${props.envName}`, {
+      port: props.containerPort,
+      protocol: elbv2.ApplicationProtocol.HTTP,
+      targets: [
+        props.ecsService.loadBalancerTarget({
+          containerName: props.containerName,
+          containerPort: props.containerPort,
+        }),
+      ],
       healthCheck: {
         path: props.healthCheckPath ?? '/health/',
-        port: 'traffic-port',
-        protocol: elbv2.Protocol.HTTP,
         healthyHttpCodes: '200-399',
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(5),
@@ -50,16 +57,9 @@ export class AlbStack extends Construct {
       },
     });
 
-    props.ecsService.attachToApplicationTargetGroup(this.targetGroup);
-
-    this.listener = this.alb.addListener(`${appName}-listener-${props.envName}`, {
-      port: 80,
-      protocol: elbv2.ApplicationProtocol.HTTP,
-      defaultTargetGroups: [this.targetGroup],
-    });
-
     new cdk.CfnOutput(this, 'AlbDnsName', {
       value: this.alb.loadBalancerDnsName,
+      description: 'Application Load Balancer DNS Name',
     });
 
     cdk.Tags.of(this.alb).add('Project', appName);

@@ -18,7 +18,6 @@ export class VpcStack extends Construct {
       ipAddresses: ec2.IpAddresses.cidr('10.0.0.0/16'),
       maxAzs: 1,
       natGateways: 1,
-
       subnetConfiguration: [
         {
           name: 'Public',
