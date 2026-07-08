@@ -6,7 +6,7 @@ import { S3Stack } from './s3-stack';
 import { EcrStack } from './ecr-stack';
 import { RdsPostgres } from './rds-stack';
 import { appName } from '../config/env';
-import { Ec2Stack } from './ec2-stack';
+import { EcsStack } from './ecs-stack';
 import { AlbStack } from './alb-stack';
 import { CloudFrontStack } from './cloudfront-stack';
 import { SsmStack } from './ssm-stack';
@@ -41,7 +41,7 @@ export class MainStack extends cdk.Stack {
       dbUserName: `${appName}_${envName}_admin`.replace(/-/g, '_'),
     });
 
-    const ec2Stack = new Ec2Stack(this, 'Ec2', {
+    const ecsStack = new EcsStack(this, 'Ecs', {
       envName,
       vpc: vpcStack.vpc,
       ec2SecurityGroup: sgStack.ec2SecurityGroup,
@@ -50,13 +50,13 @@ export class MainStack extends cdk.Stack {
       containerPort: 8000,
     });
 
-    ec2Stack.instance.node.addDependency(rds.database);
+    ecsStack.service.node.addDependency(rds.database);
 
     const albStack = new AlbStack(this, 'Alb', {
       envName,
       vpc: vpcStack.vpc,
       albSecurityGroup: sgStack.albSecurityGroup,
-      ec2Instance: ec2Stack.instance,
+      ecsService: ecsStack.service,
       containerPort: 8000,
       healthCheckPath: '/health/',
     });

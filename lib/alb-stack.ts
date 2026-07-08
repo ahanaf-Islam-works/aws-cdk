@@ -2,14 +2,14 @@ import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import * as elbv2targets from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { appName } from '../config/env';
 
 export interface AlbStackProps {
   envName: string;
   vpc: ec2.IVpc;
   albSecurityGroup: ec2.SecurityGroup;
-  ec2Instance: ec2.Instance;
+  ecsService: ecs.Ec2Service;
   containerPort?: number;
   healthCheckPath?: string;
 }
@@ -38,7 +38,6 @@ export class AlbStack extends Construct {
       port,
       protocol: elbv2.ApplicationProtocol.HTTP,
       targetType: elbv2.TargetType.INSTANCE,
-      targets: [new elbv2targets.InstanceTarget(props.ec2Instance, port)],
       healthCheck: {
         path: props.healthCheckPath ?? '/health/',
         port: 'traffic-port',
@@ -50,6 +49,8 @@ export class AlbStack extends Construct {
         unhealthyThresholdCount: 3,
       },
     });
+
+    props.ecsService.attachToApplicationTargetGroup(this.targetGroup);
 
     this.listener = this.alb.addListener(`${appName}-listener-${props.envName}`, {
       port: 80,
