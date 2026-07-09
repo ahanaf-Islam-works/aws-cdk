@@ -100,11 +100,6 @@ export class MainStack extends cdk.Stack {
 
     new SsmStack(this, 'Ssm', {
       envName,
-      dbHost: rds.host,
-      dbPort: rds.port,
-      dbName: rds.dbName,
-      dbUsername: rds.userName,
-      dbSecret: rds.dbSecret,
       mediaBucket: s3.mediaBucket,
       frontendBucket: s3.frontendBucket,
       ecrRepository: ecrStack.repository,

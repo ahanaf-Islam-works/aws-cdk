@@ -10,38 +10,20 @@ import { appName } from '../config/env';
 
 export interface SsmStackProps {
   envName: string;
-
-  dbHost: string;
-  dbPort: string;
-  dbName: string;
-  dbUsername: string;
-
-  dbSecret: secretsmanager.ISecret;
-
   mediaBucket: s3.IBucket;
   frontendBucket: s3.IBucket;
-
   ecrRepository: ecr.IRepository;
-
   distribution: cloudfront.IDistribution;
-
   djangoSecretKey: string;
-
   allowedHosts: string;
-
   corsAllowedOrigins: string;
-
-  logLevel?: string;
-
-  geminiApiKey?: string;
-
-  jwtSecret?: string;
-
+  logLevel: string;
+  geminiApiKey: string;
+  jwtSecret: string;
   vpcId: string;
   privateSubnetId: string;
   lambdaSecurityGroupId: string;
-
-  apiUrl?: string;
+  apiUrl: string;
 }
 
 export class SsmStack extends Construct {
@@ -53,21 +35,11 @@ export class SsmStack extends Construct {
     const fePrefix = bePrefix + '/fe/VITE';
 
     const beParameters = {
-      DB_HOST: props.dbHost,
-
-      DB_PORT: props.dbPort,
-
-      DB_NAME: props.dbName,
-
-      DB_USERNAME: props.dbUsername,
-
-      DB_SECRET_NAME: props.dbSecret.secretName,
-
       AWS_REGION: cdk.Stack.of(this).region,
 
       ENVIRONMENT: props.envName,
 
-      LOG_LEVEL: props.logLevel ?? 'INFO',
+      LOG_LEVEL: props.logLevel,
 
       DJANGO_SECRET_KEY: props.djangoSecretKey,
 
@@ -83,9 +55,9 @@ export class SsmStack extends Construct {
 
       ECR_REPOSITORY_URI: props.ecrRepository.repositoryUri,
 
-      GEMINI_API_KEY: props.geminiApiKey ?? '',
+      GEMINI_API_KEY: props.geminiApiKey,
 
-      JWT_SECRET: props.jwtSecret ?? '',
+      JWT_SECRET: props.jwtSecret,
 
       VPC_ID: props.vpcId,
 
@@ -95,7 +67,7 @@ export class SsmStack extends Construct {
     };
 
     const fePrameters = {
-      API_URL: props.apiUrl ?? '',
+      API_URL: props.apiUrl,
     };
 
     Object.entries(beParameters).forEach(([key, value]) => {
