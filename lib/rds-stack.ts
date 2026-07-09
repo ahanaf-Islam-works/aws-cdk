@@ -8,7 +8,6 @@ export interface RdsPostgresStackProps {
   envName: string;
   vpc: ec2.Vpc;
   securityGroup: ec2.SecurityGroup;
-
   dbName: string;
   dbUserName: string;
 }
@@ -20,7 +19,6 @@ export class RdsPostgres extends Construct {
   public readonly dbName: string;
   public readonly host: string;
   public readonly port: string;
-  public readonly databaseUrl: string;
   public readonly secretName: string;
 
   constructor(scope: Construct, id: string, props: RdsPostgresStackProps) {
@@ -68,14 +66,11 @@ export class RdsPostgres extends Construct {
         props.envName === env.prod ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     });
 
+    // aws secretsmanager get-secret-value \ --secret-id <secret-name-from-output> for getting secrets
     this.host = this.database.dbInstanceEndpointAddress;
-
     this.port = this.database.dbInstanceEndpointPort;
-
-    this.databaseUrl =
-      `postgresql://${this.userName}:` +
-      `${this.dbSecret.secretValueFromJson('password').toString()}` +
-      `@${this.host}:${this.port}/${this.dbName}`;
+    this.secretName = this.dbSecret.secretName;
+    this.secretName = this.dbSecret.secretName;
 
     new cdk.CfnOutput(this, 'DatabaseEndpoint', {
       value: this.host,
@@ -88,17 +83,6 @@ export class RdsPostgres extends Construct {
     new cdk.CfnOutput(this, 'DatabaseName', {
       value: this.dbName,
     });
-
-    /* Secret name can be used for getting db secret for further use. 
-    It will be saved in parameter store. 
-    After deployment the secret can be accessed via
-
-    aws secretsmanager get-secret-value \
-    --secret-id <secret-name-from-output>
-    
-    command
-    */
-    this.secretName = this.dbSecret.secretName;
 
     cdk.Tags.of(this.database).add('Project', appName);
     cdk.Tags.of(this.database).add('Environment', props.envName);

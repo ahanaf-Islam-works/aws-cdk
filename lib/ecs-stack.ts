@@ -4,16 +4,20 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { appName } from '../config/env';
 
 export interface EcsStackProps {
   envName: string;
-  cluster: ecs.ICluster;
+  cluster: ecs.Cluster;
+  capacityProvider: ecs.AsgCapacityProvider;
   repository: ecr.IRepository;
   executionRole: iam.IRole;
   taskRole: iam.IRole;
   containerPort: number;
+  dbSecret: secretsmanager.ISecret;
 }
+
 export class EcsStack extends Construct {
   public readonly taskDefinition: ecs.Ec2TaskDefinition;
   public readonly service: ecs.Ec2Service;
@@ -23,6 +27,8 @@ export class EcsStack extends Construct {
     super(scope, id);
 
     this.containerName = `${appName}-container`;
+
+    props.cluster.addAsgCapacityProvider(props.capacityProvider);
 
     this.taskDefinition = new ecs.Ec2TaskDefinition(this, `${appName}-${props.envName}`, {
       executionRole: props.executionRole,
@@ -39,11 +45,17 @@ export class EcsStack extends Construct {
         streamPrefix: `${appName}-${props.envName}`,
         logRetention: logs.RetentionDays.ONE_WEEK,
       }),
+      secrets: {
+        DB_PASSWORD: ecs.Secret.fromSecretsManager(props.dbSecret, 'password'),
+        DB_USERNAME: ecs.Secret.fromSecretsManager(props.dbSecret, 'username'),
+        DB_HOST: ecs.Secret.fromSecretsManager(props.dbSecret, 'host'),
+        DB_PORT: ecs.Secret.fromSecretsManager(props.dbSecret, 'port'),
+        DB_NAME: ecs.Secret.fromSecretsManager(props.dbSecret, 'dbname'),
+      },
     });
 
     container.addPortMappings({
       containerPort: props.containerPort,
-      hostPort: props.containerPort,
       protocol: ecs.Protocol.TCP,
     });
 
@@ -51,6 +63,17 @@ export class EcsStack extends Construct {
       cluster: props.cluster,
       taskDefinition: this.taskDefinition,
       desiredCount: 1,
+      capacityProviderStrategies: [
+        {
+          capacityProvider: props.capacityProvider.capacityProviderName,
+          weight: 1,
+        },
+      ],
+
+      placementStrategies: [
+        ecs.PlacementStrategy.spreadAcross(ecs.BuiltInAttributes.AVAILABILITY_ZONE),
+        ecs.PlacementStrategy.spreadAcrossInstances(),
+      ],
     });
 
     new cdk.CfnOutput(this, 'EcsClusterName', {

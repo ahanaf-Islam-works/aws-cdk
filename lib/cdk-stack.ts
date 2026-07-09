@@ -60,7 +60,7 @@ export class MainStack extends cdk.Stack {
       vpc: vpc.vpc,
     });
 
-    new Ec2Stack(this, 'Ec2', {
+    const ec2 = new Ec2Stack(this, 'Ec2', {
       envName,
       vpc: vpc.vpc,
       ec2SecurityGroup: sg.ecsSecurityGroup,
@@ -71,10 +71,12 @@ export class MainStack extends cdk.Stack {
     const ecs = new EcsStack(this, 'Ecs', {
       envName,
       cluster: ecsCluster.cluster,
+      capacityProvider: ec2.capacityProvider,
       repository: ecrStack.repository,
       executionRole: iamRoles.executionRole,
       taskRole: iamRoles.taskRole,
       containerPort: 8000,
+      dbSecret: rds.dbSecret,
     });
 
     ecs.service.node.addDependency(rds.database);
@@ -98,7 +100,6 @@ export class MainStack extends cdk.Stack {
 
     new SsmStack(this, 'Ssm', {
       envName,
-      databaseUrl: rds.databaseUrl,
       dbHost: rds.host,
       dbPort: rds.port,
       dbName: rds.dbName,

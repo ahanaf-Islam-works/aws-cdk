@@ -1,7 +1,7 @@
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
-import { appName } from '../config/env';
+import { appName, BE_TECH_STACK } from '../config/env';
 
 export interface SecurityGroupStackProps {
   envName: string;
@@ -42,14 +42,14 @@ export class SecurityGroupStack extends Construct {
     });
     this.ecsSecurityGroup.addIngressRule(
       this.albSecurityGroup,
-      ec2.Port.tcp(8000),
+      ec2.Port.tcpRange(32768, 65535),
       'Allow HTTP from ALB',
     );
 
     this.ecsSecurityGroup.addIngressRule(
       this.lambdaSecurityGroup,
       ec2.Port.tcp(8000),
-      'Allow Lambda to access Django',
+      `Allow Lambda to access server`,
     );
 
     this.managementSecurityGroup = new ec2.SecurityGroup(

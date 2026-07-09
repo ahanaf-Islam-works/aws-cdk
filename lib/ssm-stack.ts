@@ -11,7 +11,6 @@ import { appName } from '../config/env';
 export interface SsmStackProps {
   envName: string;
 
-  databaseUrl: string;
   dbHost: string;
   dbPort: string;
   dbName: string;
@@ -54,8 +53,6 @@ export class SsmStack extends Construct {
     const fePrefix = bePrefix + '/fe/VITE';
 
     const beParameters = {
-      DATABASE_URL: props.databaseUrl,
-
       DB_HOST: props.dbHost,
 
       DB_PORT: props.dbPort,

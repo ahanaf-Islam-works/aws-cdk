@@ -12,7 +12,7 @@ export interface CloudFrontStackProps {
   envName: string;
   frontendBucket: s3.IBucket;
   mediaBucket: s3.IBucket;
-  alb: elbv2.IApplicationLoadBalancer;
+  alb: elbv2.ApplicationLoadBalancer;
   certificate?: acm.ICertificate;
   domainNames?: string[];
 }
@@ -34,8 +34,9 @@ export class CloudFrontStack extends Construct {
       {
         comment: `${appName}-${props.envName}`,
         defaultRootObject: 'index.html',
-        certificate: props.certificate,
-        domainNames: props.domainNames,
+        ...(props.certificate && props.domainNames
+          ? { certificate: props.certificate, domainNames: props.domainNames }
+          : {}),
         defaultBehavior: {
           origin: frontendOrigin,
           viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
