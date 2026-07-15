@@ -1,15 +1,14 @@
 import { Construct } from 'constructs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cdk from 'aws-cdk-lib';
 
-import { appName } from '../config/env';
+import { appName, EnvironmentName } from '../config/env';
 
 export interface SsmStackProps {
-  envName: string;
+  envName: EnvironmentName;
   mediaBucket: s3.IBucket;
   frontendBucket: s3.IBucket;
   ecrRepository: ecr.IRepository;

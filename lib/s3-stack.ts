@@ -1,10 +1,10 @@
 import { Construct } from 'constructs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cdk from 'aws-cdk-lib';
-import { appName, env } from '../config/env';
+import { appName, env, EnvironmentName } from '../config/env';
 
 export interface s3StackProps {
-  envName: string;
+  envName: EnvironmentName;
 }
 
 export class S3Stack extends Construct {

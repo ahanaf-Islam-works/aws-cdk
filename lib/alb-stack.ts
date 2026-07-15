@@ -3,10 +3,10 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { appName } from '../config/env';
+import { appName, EnvironmentName } from '../config/env';
 
 export interface AlbStackProps {
-  envName: string;
+  envName: EnvironmentName;
   vpc: ec2.IVpc;
   albSecurityGroup: ec2.ISecurityGroup;
   ecsService: ecs.Ec2Service;

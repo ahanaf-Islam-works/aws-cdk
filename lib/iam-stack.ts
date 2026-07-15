@@ -4,10 +4,10 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as cdk from 'aws-cdk-lib';
-import { appName } from '../config/env';
+import { appName, EnvironmentName } from '../config/env';
 
 export interface IamStackProps {
-  envName: string;
+  envName: EnvironmentName;
   ecrRepository: ecr.IRepository;
   dbSecret: secretsmanager.ISecret;
   mediaBucket: s3.IBucket;

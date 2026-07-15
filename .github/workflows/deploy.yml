@@ -5,13 +5,13 @@ on:
     branches:
       - dev
       - stage
-      - prod
+      - main
 
   pull_request:
     branches:
       - dev
       - stage
-      - prod
+      - main
 
 permissions:
   id-token: write
@@ -51,19 +51,19 @@ jobs:
             dev)
               echo "aws_id=${{ secrets.AWS_ID_DEV }}" >> "$GITHUB_OUTPUT"
               echo "role_name=${{ secrets.ROLE_NAME_DEV }}" >> "$GITHUB_OUTPUT"
-              echo "aws_region=${{ vars.CDK_DEV_REGION }}" >> "$GITHUB_OUTPUT"
+              echo "aws_region=${{ vars.CDK_REGION }}" >> "$GITHUB_OUTPUT"
               echo "env_name=dev" >> "$GITHUB_OUTPUT"
               ;;
             stage)
               echo "aws_id=${{ secrets.AWS_ID_STAGE }}" >> "$GITHUB_OUTPUT"
               echo "role_name=${{ secrets.ROLE_NAME_STAGE }}" >> "$GITHUB_OUTPUT"
-              echo "aws_region=${{ vars.CDK_STG_REGION }}" >> "$GITHUB_OUTPUT"
+              echo "aws_region=${{ vars.CDK_REGION }}" >> "$GITHUB_OUTPUT"
               echo "env_name=stg" >> "$GITHUB_OUTPUT"
               ;;
-            prod)
+            main)
               echo "aws_id=${{ secrets.AWS_ID_PROD }}" >> "$GITHUB_OUTPUT"
               echo "role_name=${{ secrets.ROLE_NAME_PROD }}" >> "$GITHUB_OUTPUT"
-              echo "aws_region=${{ vars.CDK_PROD_REGION }}" >> "$GITHUB_OUTPUT"
+              echo "aws_region=${{ vars.CDK_REGION }}" >> "$GITHUB_OUTPUT"
               echo "env_name=prod" >> "$GITHUB_OUTPUT"
               ;;
             *)

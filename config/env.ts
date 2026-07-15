@@ -8,6 +8,8 @@ export type EnvironmentName = (typeof env)[keyof typeof env];
 export const appName = 'app-namer';
 export const ROOT_DOMAIN_NAME = 'app-name.com';
 export const BE_TECH_STACK = 'django';
+export const PORT = 8000;
+
 export const github = {
   githubOwner: '',
   githubRepository: '',

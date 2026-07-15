@@ -6,10 +6,10 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 
-import { appName } from '../config/env';
+import { appName, EnvironmentName } from '../config/env';
 
 export interface CloudFrontStackProps {
-  envName: string;
+  envName: EnvironmentName;
   frontendBucket: s3.IBucket;
   mediaBucket: s3.IBucket;
   alb: elbv2.ApplicationLoadBalancer;

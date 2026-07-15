@@ -1,10 +1,10 @@
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
-import { appName } from '../config/env';
+import { appName, EnvironmentName } from '../config/env';
 
 export interface EcsClusterProps {
-  envName: string;
+  envName: EnvironmentName;
   vpc: ec2.IVpc;
 }
 

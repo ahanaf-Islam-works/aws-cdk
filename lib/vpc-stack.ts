@@ -1,10 +1,10 @@
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as cdk from 'aws-cdk-lib';
-import { appName } from '../config/env';
+import { appName, EnvironmentName } from '../config/env';
 
 interface VpcStackProps {
-  envName: string;
+  envName: EnvironmentName;
 }
 
 export class VpcStack extends Construct {

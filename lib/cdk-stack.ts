@@ -5,7 +5,7 @@ import { SecurityGroupStack } from './security-group-stack';
 import { S3Stack } from './s3-stack';
 import { EcrStack } from './ecr-stack';
 import { RdsPostgres } from './rds-stack';
-import { appName } from '../config/env';
+import { appName, EnvironmentName, PORT } from '../config/env';
 import { EcsStack } from './ecs-stack';
 import { AlbStack } from './alb-stack';
 import { CloudFrontStack } from './cloudfront-stack';
@@ -14,7 +14,7 @@ import { IamStack } from './iam-stack';
 import { Ec2Stack } from './ec2-stack';
 import { EcsClusterStack } from './ecs-cluster-stack';
 export interface MainStackProps extends cdk.StackProps {
-  envName: string;
+  envName: EnvironmentName;
 }
 
 export class MainStack extends cdk.Stack {
@@ -75,7 +75,7 @@ export class MainStack extends cdk.Stack {
       repository: ecrStack.repository,
       executionRole: iamRoles.executionRole,
       taskRole: iamRoles.taskRole,
-      containerPort: 8000,
+      containerPort: PORT,
       dbSecret: rds.dbSecret,
     });
 
@@ -104,15 +104,17 @@ export class MainStack extends cdk.Stack {
       frontendBucket: s3.frontendBucket,
       ecrRepository: ecrStack.repository,
       distribution: cloudFrontStack.distribution,
-      djangoSecretKey: process.env.DJANGO_SECRET_KEY ?? '',
       allowedHosts: cloudFrontStack.distribution.distributionDomainName,
       corsAllowedOrigins: `https://${cloudFrontStack.distribution.distributionDomainName}`,
-      geminiApiKey: process.env.GEMINI_API_KEY,
-      jwtSecret: process.env.JWT_SECRET,
       vpcId: vpc.vpc.vpcId,
       lambdaSecurityGroupId: sg.lambdaSecurityGroup.securityGroupId,
       privateSubnetId: vpc.vpc.privateSubnets[0].subnetId,
       apiUrl: `https://${cloudFrontStack.distribution.distributionDomainName}/api`,
+
+      djangoSecretKey: '',
+      geminiApiKey: '',
+      jwtSecret: '',
+      logLevel: '',
     });
   }
 }

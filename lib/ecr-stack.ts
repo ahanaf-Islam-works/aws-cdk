@@ -1,10 +1,10 @@
 import { Construct } from 'constructs';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as cdk from 'aws-cdk-lib';
-import { appName, env } from '../config/env';
+import { appName, env, EnvironmentName } from '../config/env';
 
 export interface EcrStackProps {
-  envName: string;
+  envName: EnvironmentName;
 }
 
 export class EcrStack extends Construct {

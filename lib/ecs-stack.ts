@@ -5,10 +5,10 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import { appName } from '../config/env';
+import { appName, EnvironmentName } from '../config/env';
 
 export interface EcsStackProps {
-  envName: string;
+  envName: EnvironmentName;
   cluster: ecs.Cluster;
   capacityProvider: ecs.AsgCapacityProvider;
   repository: ecr.IRepository;

@@ -1,10 +1,10 @@
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
-import { appName, BE_TECH_STACK } from '../config/env';
+import { appName, BE_TECH_STACK, EnvironmentName } from '../config/env';
 
 export interface SecurityGroupStackProps {
-  envName: string;
+  envName: EnvironmentName;
   vpc: ec2.IVpc;
 }
 

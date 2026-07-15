@@ -2,10 +2,10 @@ import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
-import { appName, env } from '../config/env';
+import { appName, env, EnvironmentName } from '../config/env';
 
 export interface RdsPostgresStackProps {
-  envName: string;
+  envName: EnvironmentName;
   vpc: ec2.Vpc;
   securityGroup: ec2.SecurityGroup;
   dbName: string;
